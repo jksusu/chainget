@@ -1,22 +1,22 @@
-package main
+package chainget
 
 import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/core/types"
+	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/ethclient"
 	"log"
+	"math/big"
 	"time"
 )
 
 var lock = make(chan struct{}, 1)
 
 func main() {
-	rawParseParams(common.Hex2Bytes("deff4b240000000000000000000000000000000000000000000000000000000000000060000000000000000000000000000000000000000000000000000000000000000100000000000000000000000007ae8551be970cb1cca11dd7a11f47ae82e70e67000000000000000000000000104ad240a675380d520af49962ec12666a3d39b1000000000000000000000000104ad240a675380d520af49962ec12666a3d39b1000000000000000000000000000000000000000000000000000000000000000000000000000000000000000082af49447d8a07e3bd95bd0d56f35241523fbab1000000000000000000000000c02aaa39b223fe8d0a0e5c4f27ead9083c756cc2000000000000000000000000000000000000000000000000001951c4c64ad8000000000000000000000000000000000000000000000000000018b6a115aaa191000000000000000000000000000000000000000000000000000000000000a4b100000000000000000000000000000000000000000000000000000000003010ca0000000000000000000000000000000000000000000000000000000067c46153000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001800000000000000000000000000000000000000000000000000000000000000000"))
-
-	return
 	ctx := context.Background()
 	wsURL := "wss://ethereum-rpc.publicnode.com"
 	client, err := ethclient.Dial(wsURL)
@@ -25,28 +25,27 @@ func main() {
 	}
 	defer client.Close()
 
-	number, _ := client.BlockNumber(context.Background())
-	fmt.Printf("当前区块高度：%d\n", number)
+	go func() {
+		for {
+			number, _ := client.BlockNumber(context.Background())
+			fmt.Printf("当前区块高度：%d\n", number)
+			time.Sleep(1000 * time.Second)
+		}
+	}()
 
-	//contractAddress := common.HexToAddress("0xdac17f958d2ee523a2206206994597c13d831ec7")
-	//topic := crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
-	//query := ethereum.FilterQuery{
-	//	Addresses: []common.Address{contractAddress},
-	//	Topics:    [][]common.Hash{{topic}},
-	//}
-	//
-	//logs := make(chan types.Log, 100)
-	//sub, err := client.SubscribeFilterLogs(ctx, query, logs)
-	//if err != nil {
-	//	log.Fatalf("订阅失败: %v", err)
-	//}
-	//defer sub.Unsubscribe()
+	contractAddress := common.HexToAddress("0xdac17f958d2ee523a2206206994597c13d831ec7")
+	topic := crypto.Keccak256Hash([]byte("Transfer(address,address,uint256)"))
+	query := ethereum.FilterQuery{
+		Addresses: []common.Address{contractAddress},
+		Topics:    [][]common.Hash{{topic}},
+	}
 
-	//最新的区块
-	var lastTime time.Time
-	newBlockLog := make(chan *types.Header, 2048)
-	newBlockSub, _ := client.SubscribeNewHead(ctx, newBlockLog)
-	defer newBlockSub.Unsubscribe()
+	logs := make(chan types.Log, 100)
+	sub, err := client.SubscribeFilterLogs(ctx, query, logs)
+	if err != nil {
+		log.Fatalf("订阅失败: %v", err)
+	}
+	defer sub.Unsubscribe()
 
 	// 创建通道接收待处理交易哈希
 	txHashes := make(chan common.Hash)
@@ -59,35 +58,27 @@ func main() {
 	fmt.Println("开始监听 USDT Transfer 事件...")
 	for {
 		select {
-		//case err := <-sub.Err():
-		//	log.Printf("订阅错误: %v", err)
-		//	//实现重连
-		//	return
-		case newBlock := <-newBlockLog:
-			currentTime := time.Unix(int64(newBlock.Time), 0)
-			if !lastTime.IsZero() {
-				timeDiff := currentTime.Sub(lastTime)
-				fmt.Printf("Block #%d, Hash: %s, Time: %s\n", newBlock.Number, newBlock.Hash().Hex(), currentTime)
-				fmt.Printf("Time since last block: %s\n", timeDiff)
+		case err := <-sub.Err():
+			log.Printf("订阅错误: %v", err)
+			//实现重连
+			return
+		case vLog := <-logs:
+			if len(vLog.Topics) == 3 {
+				value := new(big.Int).SetBytes(vLog.Data).Int64() / 1000000
+				if value < int64(200000) {
+					//continue
+				}
+				//获取 usdt 转账
+				from := common.HexToAddress(vLog.Topics[1].Hex())
+				to := common.HexToAddress(vLog.Topics[2].Hex())
+
+				fmt.Printf("区块号: %d\n", vLog.BlockNumber)
+				fmt.Printf("交易哈希: %s\n", vLog.TxHash.Hex())
+				fmt.Printf("From: %s\n", from.Hex())
+				fmt.Printf("To: %s\n", to.Hex())
+				fmt.Printf("Value: %d usdt\n", value)
+				fmt.Println("-------------------")
 			}
-			lastTime = currentTime
-		//case vLog := <-logs:
-		//	if len(vLog.Topics) == 3 {
-		//		value := new(big.Int).SetBytes(vLog.Data).Int64() / 1000000
-		//		if value < int64(200000) {
-		//			//continue
-		//		}
-		//		//获取 usdt 转账
-		//		from := common.HexToAddress(vLog.Topics[1].Hex())
-		//		to := common.HexToAddress(vLog.Topics[2].Hex())
-		//
-		//		fmt.Printf("区块号: %d\n", vLog.BlockNumber)
-		//		fmt.Printf("交易哈希: %s\n", vLog.TxHash.Hex())
-		//		fmt.Printf("From: %s\n", from.Hex())
-		//		fmt.Printf("To: %s\n", to.Hex())
-		//		fmt.Printf("Value: %d usdt\n", value)
-		//		fmt.Println("-------------------")
-		//	}
 		case txHash := <-txHashes:
 			fmt.Printf("New pending transaction: %s\n", txHash.Hex())
 			tx, isPending, err := client.TransactionByHash(context.Background(), txHash)
@@ -106,8 +97,6 @@ func main() {
 			fmt.Printf("Gas: %d\n", tx.Gas())
 			fmt.Printf("GasPrice: %s\n", tx.GasPrice().String())
 			fmt.Printf("Data: %x\n", string(tx.Data()))
-
-			//txDataDecode(tx.Data())
 		}
 	}
 }

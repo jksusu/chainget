@@ -1,6 +1,7 @@
 package main
 
 import (
+	"chainget"
 	"context"
 	"fmt"
 	"github.com/ethereum/go-ethereum"
@@ -13,7 +14,10 @@ import (
 	"time"
 )
 
-func main() {
+func chain() {
+	c := chainget.NewEventSubClient("wss://go.getblock.io/aefcaf7f23e14a02bc1d7a56ec35057a")
+	c.SubNewPendingTransactions()
+	return
 	ctx := context.Background()
 	wsURL := "wss://ethereum-rpc.publicnode.com"
 	client, err := ethclient.Dial(wsURL)
