@@ -1,0 +1,7 @@
+.idea
+.vscode
+.DS
+logs/
+sec.go
+config.yaml
+.DS_Store
