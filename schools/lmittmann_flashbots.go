@@ -5,8 +5,6 @@ import (
 	"context"
 	"crypto/ecdsa"
 	"encoding/hex"
-	"fmt"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/lmittmann/w3/module/eth"
 	"log"
 	"math/big"
@@ -124,7 +122,7 @@ func (f ItmFlashBot) CreateSignedTx(amount *big.Int, nonce uint64, gasPrice *big
 	if err != nil {
 		log.Fatalf("❌ ContractABI.Pack Error: %v", err)
 	}
-	fmt.Println("✔️ 签名交易数据：", hex.EncodeToString(data))
+	log.Printf("✔️ 签名交易数据 data: %v", hex.EncodeToString(data))
 	tx := &types.LegacyTx{
 		Nonce:    nonce,
 		To:       &f.ContractAddress,
@@ -133,9 +131,7 @@ func (f ItmFlashBot) CreateSignedTx(amount *big.Int, nonce uint64, gasPrice *big
 		GasPrice: gasPrice,
 		Data:     data,
 	}
-	s := types.LatestSigner(params.SepoliaChainConfig)
-	//signedTx, err := types.SignNewTx(f.PrivateKey, types.NewEIP155Signer(f.ChainID), tx)
-	signedTx, err := types.SignNewTx(f.PrivateKey, s, tx)
+	signedTx, err := types.SignNewTx(f.PrivateKey, types.NewEIP155Signer(f.ChainID), tx)
 	if err != nil {
 		log.Fatalf("❌ types.SignNewTx Error: %v", err)
 	}
