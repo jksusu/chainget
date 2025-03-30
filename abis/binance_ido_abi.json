@@ -1,0 +1,101 @@
+[
+  {
+    "inputs": [
+      {
+        "internalType": "address[]",
+        "name": "_addresses",
+        "type": "address[]"
+      },
+      {
+        "internalType": "uint256[]",
+        "name": "_startAndEndTimestamps",
+        "type": "uint256[]"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_maxPoolId",
+        "type": "uint8"
+      }
+    ],
+    "name": "createIDO",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_offeringAmountPool",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_raisingAmountPool",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_limitPerUserInLP",
+        "type": "uint256"
+      },
+      {
+        "internalType": "bool",
+        "name": "_hasTax",
+        "type": "bool"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_flatTaxRate",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint8",
+        "name": "_pid",
+        "type": "uint8"
+      }
+    ],
+    "name": "setPool",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "idoAddress",
+        "type": "address"
+      }
+    ],
+    "name": "NewIDOContract",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "offeringAmountPool",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "raisingAmountPool",
+        "type": "uint256"
+      },
+      {
+        "indexed": true,
+        "internalType": "uint8",
+        "name": "pid",
+        "type": "uint8"
+      }
+    ],
+    "name": "PoolParametersSet",
+    "type": "event"
+  }
+]
